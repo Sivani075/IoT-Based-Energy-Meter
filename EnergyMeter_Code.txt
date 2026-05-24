@@ -1,0 +1,119 @@
+#define BLYNK_TEMPLATE_ID "TMPL3z0grXtLe"
+#define BLYNK_TEMPLATE_NAME "EnergyMeter"
+#define BLYNK_AUTH_TOKEN "Fs1uueada1rxNVrT8AZsYgK_gweU3FKm"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// WiFi for Wokwi
+char ssid[] = "Wokwi-GUEST";
+char pass[] = "";
+
+// OLED settings
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// Potentiometer connected to VP(GPIO36)
+#define sensorPin 36
+
+// LED pin
+#define ledPin 2
+
+float voltage = 230.0;
+
+BlynkTimer timer;
+
+// Function to send sensor data
+void sendData()
+{
+  // Read analog value
+  int sensorValue = analogRead(sensorPin);
+
+  // Convert to current
+  float current = map(sensorValue, 0, 4095, 0, 30);
+
+  // Calculate power
+  float power = voltage * current;
+
+  // Serial Monitor
+  Serial.print("Current: ");
+  Serial.print(current);
+  Serial.println(" A");
+
+  Serial.print("Power: ");
+  Serial.print(power);
+  Serial.println(" W");
+
+  // Send data to Blynk
+  Blynk.virtualWrite(V0, current);
+  Blynk.virtualWrite(V1, power);
+
+  // Overload LED alert
+  if(power > 2000)
+  {
+    digitalWrite(ledPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(ledPin, LOW);
+  }
+
+  // OLED Display
+  display.clearDisplay();
+
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  display.setCursor(0,0);
+  display.println("SMART ENERGY");
+
+  display.setCursor(0,12);
+  display.println("METER SYSTEM");
+
+  display.setCursor(0,30);
+  display.print("Current:");
+  display.print(current);
+  display.println(" A");
+
+  display.setCursor(0,45);
+  display.print("Power:");
+  display.print(power);
+  display.println(" W");
+
+  display.display();
+}
+
+void setup()
+{
+  Serial.begin(115200);
+
+  pinMode(sensorPin, INPUT);
+
+  pinMode(ledPin, OUTPUT);
+
+  // OLED Initialization
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
+    Serial.println("OLED Failed");
+    while(true);
+  }
+
+  display.clearDisplay();
+
+  // Connect to Blynk
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  // Send data every 1 second
+  timer.setInterval(1000L, sendData);
+}
+
+void loop()
+{
+  Blynk.run();
+  timer.run();
+}
