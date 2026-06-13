@@ -36,5 +36,5 @@ The project successfully displays:
 - Power values
 - Real-time dashboard updates
 
-## Simulation Platform
-Wokwi Simulator
+*Sivani S*
+INTERN ID: CITS1984
